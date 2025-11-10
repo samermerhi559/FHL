@@ -1,11 +1,17 @@
 // Mock data for the financial dashboard
 
-import { Period, SectionConfig, Alert, HealthStatus } from '../types';
+import {
+  Period,
+  SectionConfig,
+  Alert,
+  HealthStatus,
+  ArWidgetApiResponse,
+} from '../types';
 
 export const mockPeriods: Period[] = [
-  { id: 'oct-2024', label: 'Oct 2024', type: 'month' },
-  { id: 'q4-2024', label: 'Q4 2024', type: 'quarter' },
-  { id: 'ttm', label: 'TTM (12 months)', type: 'rolling' },
+  { id: 'current-month', label: 'Current Month', type: 'month' },
+  { id: 'current-quarter', label: 'This Quarter', type: 'quarter' },
+  { id: 'current-year', label: 'This Year', type: 'year' },
 ];
 
 export const mockSections: SectionConfig[] = [
@@ -26,10 +32,11 @@ export const mockSections: SectionConfig[] = [
     icon: 'ArrowDownToLine',
     status: 'warning',
     kpis: [
-      { label: 'DSO', value: '42 days', change: 3, trend: 'up', status: 'warning' },
-      { label: 'Open AR', value: '$8.2M', change: 1.5, trend: 'up' },
+      { label: 'DSO', value: '--', status: 'warning' },
+      { label: 'Open AR', value: '--' },
     ],
     sparklineData: [7.8, 8.0, 7.9, 8.1, 8.3, 8.2, 8.2],
+    source: 'api_ar',
   },
   {
     id: 'ap',
@@ -199,6 +206,33 @@ export const mockAlerts: Alert[] = [
     isRead: true,
   },
 ];
+
+export const mockArWidgetResponse: ArWidgetApiResponse = {
+  title: 'Accounts Receivable',
+  source: 'api_ar',
+  status: 'warning',
+  status_reason: 'AR overdue ratio 0,77%',
+  filters: {
+    to: '2025-11-30',
+    from: '2025-11-01',
+    mode: 'month',
+    compare: 'yoy',
+    entity_id: null,
+    report_ccy: 'EUR',
+  },
+  metrics: {
+    dso: {
+      better_is: 'down',
+      delta_pct: null,
+      value_days: 196.9013605442177,
+    },
+    open_ar: {
+      value: 356850,
+      currency: 'EUR',
+      delta_pct: null,
+    },
+  },
+};
 
 export const mock13WeekCashData = [
   { week: 'W1', actual: 24.3, projected: null },

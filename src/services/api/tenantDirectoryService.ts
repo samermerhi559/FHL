@@ -4,7 +4,9 @@ import { ApiConnectionError, ApiError } from './errors';
 import { HttpClient } from './httpClient';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-const DIRECTORY_ENDPOINT = '/tenants/directory';
+const DEFAULT_TENANT =
+  import.meta.env.VITE_DEFAULT_TENANT || 'Omega';
+const DIRECTORY_ENDPOINT = '/tenant-directory';
 
 type DirectoryResponse =
   | TenantDirectoryEntry[]
@@ -24,9 +26,19 @@ class TenantDirectoryService {
       return mockTenantDirectory;
     }
 
+    const tenant = DEFAULT_TENANT;
+    if (!tenant) {
+      console.warn(
+        '[TenantDirectoryService] Missing VITE_DEFAULT_TENANT, falling back to mock directory.'
+      );
+      return mockTenantDirectory;
+    }
+
+    const query = new URLSearchParams({ tenant }).toString();
+
     try {
       const payload = await this.client.get<DirectoryResponse>(
-        DIRECTORY_ENDPOINT,
+        `${DIRECTORY_ENDPOINT}?${query}`,
         { signal }
       );
       if (Array.isArray(payload)) {

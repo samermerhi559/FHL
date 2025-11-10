@@ -1,15 +1,10 @@
+import { useEffect, useMemo, useState } from 'react';
 import { Card } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import {
   LineChart,
   Line,
-  Area,
-  AreaChart,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
   ResponsiveContainer,
 } from 'recharts';
 import {
@@ -29,11 +24,25 @@ import {
   ArrowUp,
   ArrowDown,
 } from 'lucide-react';
-import { mockSections, mock13WeekCashData, mockHeadlines } from '../../lib/mockData';
+import { mockSections, mockHeadlines } from '../../lib/mockData';
 import { cn } from '../ui/utils';
-import { HealthStatus } from '../../types';
+import {
+  ArWidgetApiResponse,
+  ArWidgetRequestPayload,
+  GlobalFilters,
+  HealthStatus,
+  SectionConfig,
+} from '../../types';
+import { arWidgetService } from '../../services/api/arWidgetService';
+import { resolveWidgetWindow } from '../../lib/periods';
+import {
+  formatCurrencyCompact,
+  formatDays,
+  toDeltaPercent,
+} from '../../lib/formatters';
 
 interface OverviewProps {
+  filters: GlobalFilters;
   onNavigateToSection: (sectionId: string) => void;
 }
 
@@ -82,7 +91,70 @@ function MiniSparkline({ data }: { data: number[] }) {
   );
 }
 
-export function Overview({ onNavigateToSection }: OverviewProps) {
+export function Overview({ filters, onNavigateToSection }: OverviewProps) {
+  const [arWidget, setArWidget] = useState<ArWidgetApiResponse | null>(null);
+  const [arLoading, setArLoading] = useState(false);
+  const [arError, setArError] = useState<string | null>(null);
+
+  const widgetPayload = useMemo(
+    () => buildWidgetPayload(filters),
+    [
+      filters.tenant?.id,
+      filters.tenant?.name,
+      filters.entity?.id,
+      filters.entity?.directoryEntityId,
+      filters.entity?.baseCurrency,
+      filters.period.id,
+      filters.period.type,
+    ]
+  );
+
+  useEffect(() => {
+    if (!widgetPayload) {
+      setArWidget(null);
+      setArError(null);
+      setArLoading(false);
+      return;
+    }
+
+    let active = true;
+    const controller = new AbortController();
+    setArLoading(true);
+    setArError(null);
+
+    arWidgetService
+      .fetchWidget(widgetPayload, controller.signal)
+      .then((data) => {
+        if (!active) return;
+        setArWidget(data);
+      })
+      .catch((error) => {
+        if (!active || error.name === 'AbortError') return;
+        console.error('Failed to load Accounts Receivable widget', error);
+        setArError('Unable to load Accounts Receivable');
+      })
+      .finally(() => {
+        if (active) {
+          setArLoading(false);
+        }
+      });
+
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, [widgetPayload]);
+
+  const sections = useMemo(
+    () =>
+      mockSections.map((section) =>
+        section.id === 'ar'
+          ? buildArSection(section, { data: arWidget, loading: arLoading, error: arError })
+          : section
+      ),
+    [arWidget, arLoading, arError]
+  );
+
   return (
     <div className="space-y-6">
       {/* Page Header */}
@@ -115,7 +187,7 @@ export function Overview({ onNavigateToSection }: OverviewProps) {
       {/* Section Cards */}
       <div>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {mockSections.map((section) => {
+          {sections.map((section) => {
             const Icon = iconMap[section.icon];
             return (
               <Card
@@ -169,6 +241,12 @@ export function Overview({ onNavigateToSection }: OverviewProps) {
                     ))}
                   </div>
 
+                  {section.statusReason && (
+                    <p className="mt-3 text-sm text-muted-foreground">
+                      {section.statusReason}
+                    </p>
+                  )}
+
                   {section.sparklineData && (
                     <div className="mt-4 h-12 opacity-60">
                       <MiniSparkline data={section.sparklineData} />
@@ -176,7 +254,7 @@ export function Overview({ onNavigateToSection }: OverviewProps) {
                   )}
 
                   <div className="mt-3 text-muted-foreground">
-                    Source: api_{section.id}
+                    Source: {section.source ?? `api_${section.id}`}
                   </div>
                 </div>
               </Card>
@@ -187,3 +265,104 @@ export function Overview({ onNavigateToSection }: OverviewProps) {
     </div>
   );
 }
+
+const statusMap: Record<ArWidgetApiResponse['status'], HealthStatus> = {
+  ok: 'healthy',
+  warning: 'warning',
+  critical: 'critical',
+};
+
+const buildWidgetPayload = (
+  filters: GlobalFilters
+): ArWidgetRequestPayload | null => {
+  if (!filters.tenant || !filters.period) {
+    return null;
+  }
+
+  const window = resolveWidgetWindow(filters.period);
+  const entityId = getEntityId(filters);
+
+  return {
+    tenant: filters.tenant.name,
+    entityId,
+    mode: window.mode,
+    from: window.from ?? null,
+    to: window.to ?? null,
+    compare: window.compare,
+    reportCcy: filters.entity?.baseCurrency ?? null,
+  };
+};
+
+const getEntityId = (filters: GlobalFilters): number | null => {
+  if (!filters.entity) {
+    return null;
+  }
+
+  if (filters.entity.directoryEntityId) {
+    return filters.entity.directoryEntityId;
+  }
+
+  const parsed = Number(filters.entity.id);
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
+const buildArSection = (
+  base: SectionConfig,
+  state: {
+    data: ArWidgetApiResponse | null;
+    loading: boolean;
+    error: string | null;
+  }
+): SectionConfig => {
+  if (!state.data) {
+    return {
+      ...base,
+      status: state.error ? 'critical' : base.status,
+      statusReason: state.error ?? base.statusReason,
+      kpis: base.kpis.map((kpi) => ({
+        ...kpi,
+        value: state.loading ? 'Loading...' : '--',
+        change: undefined,
+        trend: undefined,
+      })),
+    };
+  }
+
+  const { status, status_reason, metrics, source, filters } = state.data;
+  const [dsoBase = { label: 'DSO', value: '--' }, openArBase = { label: 'Open AR', value: '--' }] =
+    base.kpis;
+
+  const dsoSection = {
+    ...dsoBase,
+    value: formatDays(metrics.dso.value_days),
+    change: toDeltaPercent(metrics.dso.delta_pct),
+    trend: resolveTrend(metrics.dso.delta_pct),
+  };
+
+  const currency =
+    metrics.open_ar.currency || filters.report_ccy || 'USD';
+
+  const openArSection = {
+    ...openArBase,
+    value: formatCurrencyCompact(metrics.open_ar.value, currency),
+    change: toDeltaPercent(metrics.open_ar.delta_pct),
+    trend: resolveTrend(metrics.open_ar.delta_pct),
+  };
+
+  return {
+    ...base,
+    status: statusMap[status] ?? base.status,
+    statusReason: status_reason,
+    source: source ?? base.source,
+    kpis: [dsoSection, openArSection],
+  };
+};
+
+const resolveTrend = (
+  delta?: number | null
+): 'up' | 'down' | undefined => {
+  if (delta === null || delta === undefined) {
+    return undefined;
+  }
+  return delta >= 0 ? 'up' : 'down';
+};

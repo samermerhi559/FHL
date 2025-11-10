@@ -213,7 +213,12 @@ export default function App() {
 
   const renderPage = () => {
     if (currentPage === 'overview') {
-      return <Overview onNavigateToSection={handleNavigate} />;
+      return (
+        <Overview
+          filters={filters}
+          onNavigateToSection={handleNavigate}
+        />
+      );
     }
 
     if (currentPage === 'compare') {
@@ -242,7 +247,12 @@ export default function App() {
       );
     }
 
-    return <Overview onNavigateToSection={handleNavigate} />;
+    return (
+      <Overview
+        filters={filters}
+        onNavigateToSection={handleNavigate}
+      />
+    );
   };
 
   return (
