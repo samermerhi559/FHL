@@ -96,7 +96,7 @@ export function Overview({ onNavigateToSection }: OverviewProps) {
         </Button>
       </div>
       {/* Headlines */}
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-3" style={{ display: 'none' }}>
         {mockHeadlines.map((headline, index) => (
           <Card key={index} className="p-4">
             <p className="mb-2 text-muted-foreground">{headline.label}</p>
@@ -114,10 +114,6 @@ export function Overview({ onNavigateToSection }: OverviewProps) {
 
       {/* Section Cards */}
       <div>
-        <div className="mb-4 flex items-center justify-between">
-          <h3>Sections</h3>
-          <p className="text-muted-foreground">Click any card to dive deeper</p>
-        </div>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {mockSections.map((section) => {
             const Icon = iconMap[section.icon];
