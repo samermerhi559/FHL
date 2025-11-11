@@ -6,10 +6,9 @@
       [loading]="headlinesState().loading"
       [error]="headlinesState().error"
     />
-    <app-overview-alerts-card
-      [alerts]="alertsPreview"
-      [unreadCount]="state.unreadAlerts()"
-      (navigate)="navigateToSection($event)"
+      <app-overview-ai-card
+      [aiEnabled]="state.aiEnabled()"
+      (toggle)="state.toggleAiInsights()"
     />
   </div>
 
@@ -32,7 +31,7 @@
     />
   </div>
 
-  <div class="grid gap-4 lg:grid-cols-2">
+  <div class="grid auto-rows-fr gap-4 lg:grid-cols-2">
     <app-overview-projection-card
       [weeks]="cashWeeks()"
       [summary]="cashSummary()"
@@ -41,6 +40,8 @@
       [currency]="cashCurrency()"
       [loading]="cashState().loading"
       [error]="cashState().error"
+      [expanded]="cashExpanded()"
+      (expandToggle)="toggleCashExpanded()"
     />
     <app-overview-projection-graph
       [weeks]="cashWeeks()"
@@ -52,18 +53,51 @@
       [error]="cashState().error"
     />
   </div>
-
-  <div class="grid gap-4 lg:grid-cols-2">
-    <app-overview-ai-card
-      [aiEnabled]="state.aiEnabled()"
-      (toggle)="state.toggleAiInsights()"
-    />
+ <!-- <div class="grid gap-4 lg:grid-cols-2">
+  
     <app-overview-quick-links-card (navigate)="navigateToSection($event)" />
-  </div>
+  </div>-->
 
-  <app-overview-sections-grid
-    [sections]="nonWidgetSections()"
-    [statusClasses]="statusClasses"
-    (navigate)="navigateToSection($event)"
-  />
+  <div class="grid gap-4 lg:grid-cols-4">
+    <app-overview-section-widget
+      [section]="sectionLookup()['liquidity']"
+      [statusClasses]="statusClasses"
+      (navigate)="navigateToSection($event)"
+    />
+    <app-overview-section-widget
+      [section]="sectionLookup()['profitability']"
+      [statusClasses]="statusClasses"
+      (navigate)="navigateToSection($event)"
+    />
+    <app-overview-section-widget
+      [section]="sectionLookup()['working-capital']"
+      [statusClasses]="statusClasses"
+      (navigate)="navigateToSection($event)"
+    />
+    <app-overview-section-widget
+      [section]="sectionLookup()['revenue-health']"
+      [statusClasses]="statusClasses"
+      (navigate)="navigateToSection($event)"
+    />
+    <app-overview-section-widget
+      [section]="sectionLookup()['fx-treasury']"
+      [statusClasses]="statusClasses"
+      (navigate)="navigateToSection($event)"
+    />
+    <app-overview-section-widget
+      [section]="sectionLookup()['tax-vat']"
+      [statusClasses]="statusClasses"
+      (navigate)="navigateToSection($event)"
+    />
+    <app-overview-section-widget
+      [section]="sectionLookup()['balance-sheet']"
+      [statusClasses]="statusClasses"
+      (navigate)="navigateToSection($event)"
+    />
+    <app-overview-section-widget
+      [section]="sectionLookup()['concentration-risk']"
+      [statusClasses]="statusClasses"
+      (navigate)="navigateToSection($event)"
+    />
+  </div>
 </section>

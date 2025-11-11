@@ -11,6 +11,14 @@ import {
   selector: 'app-overview-projection-graph',
   standalone: true,
   imports: [CommonModule, NgxEchartsDirective],
+  styles: [
+    `
+      :host {
+        display: block;
+        height: 100%;
+      }
+    `,
+  ],
   template: `
     <div class="rounded-2xl border border-border bg-card p-4 shadow-card">
       <div class="flex items-center justify-between">
@@ -36,7 +44,7 @@ import {
       @if (loading) {
         <p class="mt-4 text-sm text-muted-foreground">Loading...</p>
       } @else {
-        <div class="mt-4 h-72 rounded-lg border border-dashed border-border/70 bg-gradient-to-b from-background via-background to-muted/50">
+        <div class="mt-4 flex-1 rounded-lg border border-dashed border-border/70 bg-gradient-to-b from-background via-background to-muted/50">
           <div
             echarts
             class="h-full w-full"

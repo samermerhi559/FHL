@@ -44,7 +44,7 @@ import { OverviewProjectionCardComponent } from './components/projection-card/pr
 import { OverviewProjectionGraphComponent } from './components/projection-graph/projection-graph.component';
 import { OverviewAiCardComponent } from './components/ai-card/ai-card.component';
 import { OverviewQuickLinksCardComponent } from './components/quick-links-card/quick-links-card.component';
-import { OverviewSectionsGridComponent } from './components/sections-grid/sections-grid.component';
+import { OverviewSectionWidgetComponent } from './components/section-widget/section-widget.component';
 
 interface WidgetState<T> {
   loading: boolean;
@@ -67,7 +67,7 @@ interface WidgetState<T> {
     OverviewProjectionGraphComponent,
     OverviewAiCardComponent,
     OverviewQuickLinksCardComponent,
-    OverviewSectionsGridComponent,
+    OverviewSectionWidgetComponent,
   ],
   templateUrl: './overview.component.html',
   styleUrl: './overview.component.scss',
@@ -110,6 +110,7 @@ export class OverviewComponent {
     error: null,
     data: mockCashOutlookResponse,
   });
+  protected readonly cashExpanded = signal(false);
 
   protected readonly computedSections = signal<SectionConfig[]>(mockSections);
   protected readonly arSection = computed(() =>
@@ -118,11 +119,13 @@ export class OverviewComponent {
   protected readonly apSection = computed(() =>
     this.computedSections().find((section) => section.id === 'ap')
   );
-  protected readonly nonWidgetSections = computed(() =>
-    this.computedSections().filter(
-      (section) => section.id !== 'ar' && section.id !== 'ap'
-    )
-  );
+  protected readonly sectionLookup = computed(() => {
+    const lookup: Record<string, SectionConfig | undefined> = {};
+    for (const section of this.computedSections()) {
+      lookup[section.id] = section;
+    }
+    return lookup;
+  });
   protected readonly cashWeeks = computed(
     () => this.cashState().data?.weeks ?? mockCashOutlookResponse.weeks
   );
@@ -180,6 +183,10 @@ export class OverviewComponent {
 
   protected get apStatusLabel(): string {
     return resolveWidgetStatusLabel(this.apState());
+  }
+
+  protected toggleCashExpanded(): void {
+    this.cashExpanded.update((value) => !value);
   }
 
   private loadWidgets(filters: GlobalFilters): void {

@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import {
   CashOutlookSummary,
   CashOutlookWeek,
@@ -9,21 +9,39 @@ import {
   selector: 'app-overview-projection-card',
   standalone: true,
   imports: [CommonModule],
+  styles: [
+    `
+      :host {
+        display: block;
+        height: 100%;
+      }
+    `,
+  ],
   template: `
-    <div class="rounded-2xl border border-border bg-card p-4 shadow-card">
-      <div class="flex items-center justify-between">
+    <div class="flex h-full flex-col rounded-2xl border border-border bg-card p-4 shadow-card">
+      <div class="flex items-center justify-between gap-4">
         <div>
           <p class="text-sm text-muted-foreground">Cash Projection</p>
           <h2 class="text-lg font-semibold">{{ title }}</h2>
         </div>
-        <span class="text-xs text-muted-foreground"
-          >As of {{ asOf | date: 'mediumDate' }}</span
-        >
+        <div class="flex items-center gap-3 text-xs text-muted-foreground">
+          <span>As of {{ asOf | date: 'mediumDate' }}</span>
+          <button
+            type="button"
+            class="rounded-full border border-border px-3 py-1 text-xs font-medium text-foreground transition hover:bg-muted"
+            (click)="expandToggle.emit()"
+          >
+            {{ expanded ? 'Collapse' : 'Expand' }}
+          </button>
+        </div>
       </div>
       @if (loading) {
         <p class="mt-4 text-sm text-muted-foreground">Loading...</p>
       } @else {
-        <div class="mt-4 space-y-2 text-sm">
+        <div
+          class="mt-4 flex-1 space-y-2 overflow-y-auto text-sm"
+          [ngClass]="expanded ? 'max-h-none' : 'max-h-[26rem]'"
+        >
           @for (week of weeks; track week.label) {
             <div
               class="flex items-center justify-between rounded border border-dashed border-border px-3 py-2"
@@ -90,6 +108,8 @@ export class OverviewProjectionCardComponent {
   @Input() currency = 'USD';
   @Input() loading = false;
   @Input() error: string | null = null;
+  @Input() expanded = false;
+  @Output() expandToggle = new EventEmitter<void>();
 
   formatValue(value: number | null | undefined): string {
     if (value === null || value === undefined) {

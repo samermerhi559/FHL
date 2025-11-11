@@ -34,9 +34,7 @@ import { LucideIconsModule } from '../../../../shared/lucide-icons.module';
           <dd class="font-medium">{{ filters?.period?.label }}</dd>
         </div>
       </dl>
-      <div class="mt-4 rounded-lg bg-muted p-3 text-xs text-muted-foreground">
-        Right-click anywhere to copy direct deep links with filters applied.
-      </div>
+     
     </div>
   `,
 })
