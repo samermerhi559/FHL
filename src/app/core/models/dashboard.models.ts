@@ -170,3 +170,18 @@ export interface CashOutlookResponse {
   currency: string;
   entity_id: number | null;
 }
+
+export interface HeadlineSignal {
+  pct: number | null;
+  code: string | null;
+  metric: string | null;
+  direction: 'up' | 'down' | null;
+}
+
+export interface HeadlinesResponse {
+  title: string;
+  source: string;
+  asof_month: string;
+  biggest_mom: HeadlineSignal | null;
+  biggest_yoy: HeadlineSignal | null;
+}

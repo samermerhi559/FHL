@@ -11,14 +11,15 @@ import { RouterModule } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   mockCashOutlookResponse,
+  mockHeadlinesResponse,
   mockAlerts,
-  mockHeadlines,
   mockSections,
 } from '../../data/mock-data';
 import {
   ApWidgetApiResponse,
   ArWidgetApiResponse,
   CashOutlookResponse,
+  HeadlinesResponse,
   GlobalFilters,
   HealthStatus,
   SectionConfig,
@@ -27,6 +28,7 @@ import { DashboardStateService } from '../../core/services/dashboard-state.servi
 import { ArWidgetService } from '../../core/services/ar-widget.service';
 import { ApWidgetService } from '../../core/services/ap-widget.service';
 import { CashOutlookService } from '../../core/services/cash-outlook.service';
+import { HeadlinesService } from '../../core/services/headlines.service';
 import { resolveWidgetWindow } from '../../core/utils/periods';
 import {
   formatCurrencyCompact,
@@ -39,6 +41,7 @@ import { OverviewAlertsCardComponent } from './components/alerts-card/alerts-car
 import { OverviewCollectionWidgetComponent } from './components/collection-widget/collection-widget.component';
 import { OverviewDisbursementWidgetComponent } from './components/disbursement-widget/disbursement-widget.component';
 import { OverviewProjectionCardComponent } from './components/projection-card/projection-card.component';
+import { OverviewProjectionGraphComponent } from './components/projection-graph/projection-graph.component';
 import { OverviewAiCardComponent } from './components/ai-card/ai-card.component';
 import { OverviewQuickLinksCardComponent } from './components/quick-links-card/quick-links-card.component';
 import { OverviewSectionsGridComponent } from './components/sections-grid/sections-grid.component';
@@ -61,6 +64,7 @@ interface WidgetState<T> {
     OverviewCollectionWidgetComponent,
     OverviewDisbursementWidgetComponent,
     OverviewProjectionCardComponent,
+    OverviewProjectionGraphComponent,
     OverviewAiCardComponent,
     OverviewQuickLinksCardComponent,
     OverviewSectionsGridComponent,
@@ -73,10 +77,15 @@ export class OverviewComponent {
   private readonly arService = inject(ArWidgetService);
   private readonly apService = inject(ApWidgetService);
   private readonly cashService = inject(CashOutlookService);
+  private readonly headlinesService = inject(HeadlinesService);
   private readonly destroyRef = inject(DestroyRef);
 
   protected readonly sections = signal(mockSections);
-  protected readonly headlines = mockHeadlines;
+  protected readonly headlinesState = signal<WidgetState<HeadlinesResponse>>({
+    loading: false,
+    error: null,
+    data: mockHeadlinesResponse,
+  });
   protected readonly alerts = mockAlerts;
   protected readonly alertsPreview = this.alerts.slice(0, 3);
   protected readonly statusClasses: Record<HealthStatus, string> = {
@@ -137,6 +146,7 @@ export class OverviewComponent {
     () => {
       const filters = this.state.filters();
       this.loadWidgets(filters);
+      this.loadHeadlines(filters);
     },
     { allowSignalWrites: true }
   );
@@ -217,7 +227,8 @@ export class OverviewComponent {
   }
 
   private loadCashOutlook(filters: GlobalFilters): void {
-    const tenant = filters.tenant?.name;
+    const tenant =
+      filters.tenant?.id?.toString() ?? filters.tenant?.name ?? null;
     const entityId = getEntityId(filters);
     if (!tenant || entityId === null) {
       this.cashState.set({
@@ -244,6 +255,40 @@ export class OverviewComponent {
             loading: false,
             error: error.message ?? 'Unable to load cash outlook',
             data: this.cashState().data,
+          }),
+      });
+  }
+
+  private loadHeadlines(filters: GlobalFilters): void {
+    const tenant =
+      filters.tenant?.id?.toString() ?? filters.tenant?.name ?? null;
+    const entityId = getEntityId(filters);
+    if (!tenant || entityId === null) {
+      this.headlinesState.set({
+        loading: false,
+        error: null,
+        data: mockHeadlinesResponse,
+      });
+      return;
+    }
+
+    this.headlinesState.update((current) => ({
+      ...current,
+      loading: true,
+      error: null,
+    }));
+
+    this.headlinesService
+      .fetchHeadlines(tenant, entityId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (data) =>
+          this.headlinesState.set({ loading: false, error: null, data }),
+        error: (error) =>
+          this.headlinesState.set({
+            loading: false,
+            error: error.message ?? 'Unable to load headlines',
+            data: this.headlinesState().data,
           }),
       });
   }

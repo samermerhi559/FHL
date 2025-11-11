@@ -1,7 +1,11 @@
 <section class="space-y-6">
   <div class="grid gap-4 lg:grid-cols-3">
     <app-overview-context-card [filters]="state.filters()" />
-    <app-overview-headlines-card [headlines]="headlines" />
+    <app-overview-headlines-card
+      [headlines]="headlinesState().data"
+      [loading]="headlinesState().loading"
+      [error]="headlinesState().error"
+    />
     <app-overview-alerts-card
       [alerts]="alertsPreview"
       [unreadCount]="state.unreadAlerts()"
@@ -28,7 +32,7 @@
     />
   </div>
 
-  <div class="grid gap-4 xl:grid-cols-3">
+  <div class="grid gap-4 lg:grid-cols-2">
     <app-overview-projection-card
       [weeks]="cashWeeks()"
       [summary]="cashSummary()"
@@ -38,6 +42,18 @@
       [loading]="cashState().loading"
       [error]="cashState().error"
     />
+    <app-overview-projection-graph
+      [weeks]="cashWeeks()"
+      [summary]="cashSummary()"
+      [title]="cashTitle()"
+      [asOf]="cashAsOf()"
+      [currency]="cashCurrency()"
+      [loading]="cashState().loading"
+      [error]="cashState().error"
+    />
+  </div>
+
+  <div class="grid gap-4 lg:grid-cols-2">
     <app-overview-ai-card
       [aiEnabled]="state.aiEnabled()"
       (toggle)="state.toggleAiInsights()"

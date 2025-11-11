@@ -3,6 +3,7 @@ import {
   ApWidgetApiResponse,
   ArWidgetApiResponse,
   CashOutlookResponse,
+  HeadlinesResponse,
   HealthStatus,
   Period,
   SectionConfig,
@@ -291,4 +292,22 @@ export const mockCashOutlookResponse: CashOutlookResponse = {
       will_breach_zero: false,
     },
   ],
+};
+
+export const mockHeadlinesResponse: HeadlinesResponse = {
+  title: 'Headlines',
+  source: 'mock_signals_headlines',
+  asof_month: '2025-11-01',
+  biggest_mom: {
+    pct: 0.1628,
+    code: 'REVENUE',
+    metric: 'Revenue',
+    direction: 'up',
+  },
+  biggest_yoy: {
+    pct: 0.281,
+    code: 'GROSS_PROFIT',
+    metric: 'Gross Profit',
+    direction: 'up',
+  },
 };
