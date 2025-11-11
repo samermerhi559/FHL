@@ -76,7 +76,7 @@ export interface Alert {
 export type WidgetMode = 'month' | 'year' | 'custom';
 export type WidgetCompareMode = 'prev_period' | 'yoy';
 
-export interface ArWidgetRequestPayload {
+export interface WidgetRequestPayload {
   tenant: string;
   entityId?: number | null;
   mode: WidgetMode;
@@ -85,6 +85,9 @@ export interface ArWidgetRequestPayload {
   compare: WidgetCompareMode;
   reportCcy?: string | null;
 }
+
+export type ArWidgetRequestPayload = WidgetRequestPayload;
+export type ApWidgetRequestPayload = WidgetRequestPayload;
 
 export interface ArWidgetFilters {
   to: string | null;
@@ -115,4 +118,35 @@ export interface ArWidgetApiResponse {
   status_reason: string;
   filters: ArWidgetFilters;
   metrics: ArWidgetMetrics;
+}
+
+export interface ApWidgetFilters {
+  to: string | null;
+  from: string | null;
+  mode: WidgetMode;
+  compare: WidgetCompareMode;
+  entity_id: number | null;
+  report_ccy: string | null;
+}
+
+export interface ApWidgetMetrics {
+  dpo: {
+    better_is: 'up' | 'down';
+    delta_pct: number | null;
+    value_days: number | null;
+  };
+  open_ap: {
+    value: number | null;
+    currency: string;
+    delta_pct: number | null;
+  };
+}
+
+export interface ApWidgetApiResponse {
+  title: string;
+  source: string;
+  status: 'ok' | 'warning' | 'critical';
+  status_reason: string;
+  filters: ApWidgetFilters;
+  metrics: ApWidgetMetrics;
 }

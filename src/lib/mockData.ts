@@ -6,6 +6,7 @@ import {
   Alert,
   HealthStatus,
   ArWidgetApiResponse,
+  ApWidgetApiResponse,
 } from '../types';
 
 export const mockPeriods: Period[] = [
@@ -44,10 +45,11 @@ export const mockSections: SectionConfig[] = [
     icon: 'ArrowUpToLine',
     status: 'healthy',
     kpis: [
-      { label: 'DPO', value: '35 days', change: -2, trend: 'down' },
-      { label: 'Open AP', value: '$4.6M', change: -1.2, trend: 'down' },
+      { label: 'DPO', value: '--' },
+      { label: 'Open AP', value: '--' },
     ],
     sparklineData: [5.2, 5.0, 4.9, 4.8, 4.7, 4.6, 4.6],
+    source: 'api_ap',
   },
   {
     id: 'profitability',
@@ -230,6 +232,33 @@ export const mockArWidgetResponse: ArWidgetApiResponse = {
       value: 356850,
       currency: 'EUR',
       delta_pct: null,
+    },
+  },
+};
+
+export const mockApWidgetResponse: ApWidgetApiResponse = {
+  title: 'Accounts Payable',
+  source: 'api_ap',
+  status: 'warning',
+  status_reason: 'AP overdue ratio 70,29%',
+  filters: {
+    to: '2025-11-30',
+    from: '2025-11-01',
+    mode: 'month',
+    compare: 'prev_period',
+    entity_id: null,
+    report_ccy: 'EUR',
+  },
+  metrics: {
+    dpo: {
+      better_is: 'up',
+      delta_pct: 0.0546999787722487,
+      value_days: 171.84152179390276,
+    },
+    open_ap: {
+      value: 233575,
+      currency: 'EUR',
+      delta_pct: 0.158462492250465,
     },
   },
 };

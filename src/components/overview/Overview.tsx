@@ -28,12 +28,14 @@ import { mockSections, mockHeadlines } from '../../lib/mockData';
 import { cn } from '../ui/utils';
 import {
   ArWidgetApiResponse,
-  ArWidgetRequestPayload,
+  ApWidgetApiResponse,
+  WidgetRequestPayload,
   GlobalFilters,
   HealthStatus,
   SectionConfig,
 } from '../../types';
 import { arWidgetService } from '../../services/api/arWidgetService';
+import { apWidgetService } from '../../services/api/apWidgetService';
 import { resolveWidgetWindow } from '../../lib/periods';
 import {
   formatCurrencyCompact,
@@ -95,6 +97,9 @@ export function Overview({ filters, onNavigateToSection }: OverviewProps) {
   const [arWidget, setArWidget] = useState<ArWidgetApiResponse | null>(null);
   const [arLoading, setArLoading] = useState(false);
   const [arError, setArError] = useState<string | null>(null);
+  const [apWidget, setApWidget] = useState<ApWidgetApiResponse | null>(null);
+  const [apLoading, setApLoading] = useState(false);
+  const [apError, setApError] = useState<string | null>(null);
 
   const widgetPayload = useMemo(
     () => buildWidgetPayload(filters),
@@ -145,14 +150,52 @@ export function Overview({ filters, onNavigateToSection }: OverviewProps) {
     };
   }, [widgetPayload]);
 
+  useEffect(() => {
+    if (!widgetPayload) {
+      setApWidget(null);
+      setApError(null);
+      setApLoading(false);
+      return;
+    }
+
+    let active = true;
+    const controller = new AbortController();
+    setApLoading(true);
+    setApError(null);
+
+    apWidgetService
+      .fetchWidget(widgetPayload, controller.signal)
+      .then((data) => {
+        if (!active) return;
+        setApWidget(data);
+      })
+      .catch((error) => {
+        if (!active || error.name === 'AbortError') return;
+        console.error('Failed to load Accounts Payable widget', error);
+        setApError('Unable to load Accounts Payable');
+      })
+      .finally(() => {
+        if (active) {
+          setApLoading(false);
+        }
+      });
+
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, [widgetPayload]);
+
   const sections = useMemo(
     () =>
       mockSections.map((section) =>
         section.id === 'ar'
           ? buildArSection(section, { data: arWidget, loading: arLoading, error: arError })
+          : section.id === 'ap'
+            ? buildApSection(section, { data: apWidget, loading: apLoading, error: apError })
           : section
       ),
-    [arWidget, arLoading, arError]
+    [arWidget, arLoading, arError, apWidget, apLoading, apError]
   );
 
   return (
@@ -266,7 +309,9 @@ export function Overview({ filters, onNavigateToSection }: OverviewProps) {
   );
 }
 
-const statusMap: Record<ArWidgetApiResponse['status'], HealthStatus> = {
+type WidgetStatus = 'ok' | 'warning' | 'critical';
+
+const statusMap: Record<WidgetStatus, HealthStatus> = {
   ok: 'healthy',
   warning: 'warning',
   critical: 'critical',
@@ -274,7 +319,7 @@ const statusMap: Record<ArWidgetApiResponse['status'], HealthStatus> = {
 
 const buildWidgetPayload = (
   filters: GlobalFilters
-): ArWidgetRequestPayload | null => {
+): WidgetRequestPayload | null => {
   if (!filters.tenant || !filters.period) {
     return null;
   }
@@ -355,6 +400,58 @@ const buildArSection = (
     statusReason: status_reason,
     source: source ?? base.source,
     kpis: [dsoSection, openArSection],
+  };
+};
+
+const buildApSection = (
+  base: SectionConfig,
+  state: {
+    data: ApWidgetApiResponse | null;
+    loading: boolean;
+    error: string | null;
+  }
+): SectionConfig => {
+  if (!state.data) {
+    return {
+      ...base,
+      status: state.error ? 'critical' : base.status,
+      statusReason: state.error ?? base.statusReason,
+      kpis: base.kpis.map((kpi) => ({
+        ...kpi,
+        value: state.loading ? 'Loading...' : '--',
+        change: undefined,
+        trend: undefined,
+      })),
+    };
+  }
+
+  const { status, status_reason, metrics, source, filters } = state.data;
+  const [dpoBase = { label: 'DPO', value: '--' }, openApBase = { label: 'Open AP', value: '--' }] =
+    base.kpis;
+
+  const dpoSection = {
+    ...dpoBase,
+    value: formatDays(metrics.dpo.value_days),
+    change: toDeltaPercent(metrics.dpo.delta_pct),
+    trend: resolveTrend(metrics.dpo.delta_pct),
+  };
+
+  const currency =
+    metrics.open_ap.currency || filters.report_ccy || 'USD';
+
+  const openApSection = {
+    ...openApBase,
+    value: formatCurrencyCompact(metrics.open_ap.value, currency),
+    change: toDeltaPercent(metrics.open_ap.delta_pct),
+    trend: resolveTrend(metrics.open_ap.delta_pct),
+  };
+
+  return {
+    ...base,
+    status: statusMap[status] ?? base.status,
+    statusReason: status_reason,
+    source: source ?? base.source,
+    kpis: [dpoSection, openApSection],
   };
 };
 
