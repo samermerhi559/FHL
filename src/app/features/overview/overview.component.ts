@@ -10,7 +10,7 @@ import {
 import { RouterModule } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
-  mock13WeekCashData,
+  mockCashOutlookResponse,
   mockAlerts,
   mockHeadlines,
   mockSections,
@@ -18,6 +18,7 @@ import {
 import {
   ApWidgetApiResponse,
   ArWidgetApiResponse,
+  CashOutlookResponse,
   GlobalFilters,
   HealthStatus,
   SectionConfig,
@@ -25,14 +26,22 @@ import {
 import { DashboardStateService } from '../../core/services/dashboard-state.service';
 import { ArWidgetService } from '../../core/services/ar-widget.service';
 import { ApWidgetService } from '../../core/services/ap-widget.service';
+import { CashOutlookService } from '../../core/services/cash-outlook.service';
 import { resolveWidgetWindow } from '../../core/utils/periods';
 import {
   formatCurrencyCompact,
   formatDays,
   toDeltaPercent,
 } from '../../core/utils/formatters';
-import { SparklineComponent } from '../../shared/components/sparkline/sparkline.component';
-import { LucideIconsModule } from '../../shared/lucide-icons.module';
+import { OverviewContextCardComponent } from './components/context-card/context-card.component';
+import { OverviewHeadlinesCardComponent } from './components/headlines-card/headlines-card.component';
+import { OverviewAlertsCardComponent } from './components/alerts-card/alerts-card.component';
+import { OverviewCollectionWidgetComponent } from './components/collection-widget/collection-widget.component';
+import { OverviewDisbursementWidgetComponent } from './components/disbursement-widget/disbursement-widget.component';
+import { OverviewProjectionCardComponent } from './components/projection-card/projection-card.component';
+import { OverviewAiCardComponent } from './components/ai-card/ai-card.component';
+import { OverviewQuickLinksCardComponent } from './components/quick-links-card/quick-links-card.component';
+import { OverviewSectionsGridComponent } from './components/sections-grid/sections-grid.component';
 
 interface WidgetState<T> {
   loading: boolean;
@@ -43,7 +52,19 @@ interface WidgetState<T> {
 @Component({
   selector: 'app-overview',
   standalone: true,
-  imports: [CommonModule, RouterModule, LucideIconsModule, SparklineComponent],
+  imports: [
+    CommonModule,
+    RouterModule,
+    OverviewContextCardComponent,
+    OverviewHeadlinesCardComponent,
+    OverviewAlertsCardComponent,
+    OverviewCollectionWidgetComponent,
+    OverviewDisbursementWidgetComponent,
+    OverviewProjectionCardComponent,
+    OverviewAiCardComponent,
+    OverviewQuickLinksCardComponent,
+    OverviewSectionsGridComponent,
+  ],
   templateUrl: './overview.component.html',
   styleUrl: './overview.component.scss',
 })
@@ -51,12 +72,13 @@ export class OverviewComponent {
   protected readonly state = inject(DashboardStateService);
   private readonly arService = inject(ArWidgetService);
   private readonly apService = inject(ApWidgetService);
+  private readonly cashService = inject(CashOutlookService);
   private readonly destroyRef = inject(DestroyRef);
 
   protected readonly sections = signal(mockSections);
   protected readonly headlines = mockHeadlines;
   protected readonly alerts = mockAlerts;
-  protected readonly cashTrend = mock13WeekCashData;
+  protected readonly alertsPreview = this.alerts.slice(0, 3);
   protected readonly statusClasses: Record<HealthStatus, string> = {
     healthy: 'border-emerald-200 bg-emerald-50 text-emerald-700',
     warning: 'border-amber-200 bg-amber-50 text-amber-700',
@@ -74,6 +96,11 @@ export class OverviewComponent {
     error: null,
     data: null,
   });
+  protected readonly cashState = signal<WidgetState<CashOutlookResponse>>({
+    loading: false,
+    error: null,
+    data: mockCashOutlookResponse,
+  });
 
   protected readonly computedSections = signal<SectionConfig[]>(mockSections);
   protected readonly arSection = computed(() =>
@@ -81,6 +108,29 @@ export class OverviewComponent {
   );
   protected readonly apSection = computed(() =>
     this.computedSections().find((section) => section.id === 'ap')
+  );
+  protected readonly nonWidgetSections = computed(() =>
+    this.computedSections().filter(
+      (section) => section.id !== 'ar' && section.id !== 'ap'
+    )
+  );
+  protected readonly cashWeeks = computed(
+    () => this.cashState().data?.weeks ?? mockCashOutlookResponse.weeks
+  );
+  protected readonly cashSummary = computed(
+    () => this.cashState().data?.summary ?? []
+  );
+  protected readonly cashTitle = computed(
+    () => this.cashState().data?.title ?? '13-Week Outlook'
+  );
+  protected readonly cashAsOf = computed(
+    () => this.cashState().data?.as_of ?? ''
+  );
+  protected readonly cashCurrency = computed(
+    () =>
+      this.cashState().data?.currency ??
+      this.state.filters().entity?.baseCurrency ??
+      'USD'
   );
 
   private readonly widgetEffect = effect(
@@ -114,16 +164,30 @@ export class OverviewComponent {
     this.state.navigateTo(path);
   }
 
+  protected get arStatusLabel(): string {
+    return resolveWidgetStatusLabel(this.arState());
+  }
+
+  protected get apStatusLabel(): string {
+    return resolveWidgetStatusLabel(this.apState());
+  }
+
   private loadWidgets(filters: GlobalFilters): void {
     const payload = buildWidgetPayload(filters);
     if (!payload) {
       this.arState.set({ loading: false, error: null, data: null });
       this.apState.set({ loading: false, error: null, data: null });
+      this.cashState.set({
+        loading: false,
+        error: null,
+        data: mockCashOutlookResponse,
+      });
       return;
     }
 
     this.arState.update((current) => ({ ...current, loading: true, error: null }));
     this.apState.update((current) => ({ ...current, loading: true, error: null }));
+    this.loadCashOutlook(filters);
 
     this.arService
       .fetchWidget(payload)
@@ -148,6 +212,38 @@ export class OverviewComponent {
             loading: false,
             error: error.message ?? 'Unable to load Accounts Payable widget',
             data: null,
+          }),
+      });
+  }
+
+  private loadCashOutlook(filters: GlobalFilters): void {
+    const tenant = filters.tenant?.name;
+    const entityId = getEntityId(filters);
+    if (!tenant || entityId === null) {
+      this.cashState.set({
+        loading: false,
+        error: null,
+        data: mockCashOutlookResponse,
+      });
+      return;
+    }
+
+    this.cashState.update((current) => ({
+      ...current,
+      loading: true,
+      error: null,
+    }));
+
+    this.cashService
+      .fetchCashOutlook(tenant, entityId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (data) => this.cashState.set({ loading: false, error: null, data }),
+        error: (error) =>
+          this.cashState.set({
+            loading: false,
+            error: error.message ?? 'Unable to load cash outlook',
+            data: this.cashState().data,
           }),
       });
   }
@@ -275,6 +371,16 @@ const buildPlaceholderSection = <T>(
     trend: undefined,
   })),
 });
+
+const resolveWidgetStatusLabel = (state: WidgetState<unknown>): string => {
+  if (state.loading) {
+    return 'Loading...';
+  }
+  if (state.error) {
+    return 'Error';
+  }
+  return 'Synced';
+};
 
 const resolveTrend = (delta?: number | null): 'up' | 'down' | undefined => {
   if (delta === null || delta === undefined) {

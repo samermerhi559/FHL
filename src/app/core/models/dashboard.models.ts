@@ -148,3 +148,25 @@ export interface ApWidgetApiResponse {
   filters: ApWidgetFilters;
   metrics: ApWidgetMetrics;
 }
+
+export interface CashOutlookWeek {
+  kind: 'actual' | 'projected';
+  label: string;
+  value: number;
+  week_end: string;
+}
+
+export interface CashOutlookSummary {
+  min_balance_13w: number;
+  will_breach_zero: boolean;
+}
+
+export interface CashOutlookResponse {
+  as_of: string;
+  title: string;
+  weeks: CashOutlookWeek[];
+  source: string;
+  summary: CashOutlookSummary[];
+  currency: string;
+  entity_id: number | null;
+}

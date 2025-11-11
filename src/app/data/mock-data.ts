@@ -2,6 +2,7 @@ import {
   Alert,
   ApWidgetApiResponse,
   ArWidgetApiResponse,
+  CashOutlookResponse,
   HealthStatus,
   Period,
   SectionConfig,
@@ -149,7 +150,6 @@ export const mockSections: SectionConfig[] = [
 export const mockHeadlines = [
   { label: 'Biggest MoM Change', value: 'EBITDA +12.3%', trend: 'up' as const },
   { label: 'Biggest YoY Change', value: 'Revenue +18.5%', trend: 'up' as const },
-  { label: 'Variance to Budget', value: 'Cash -$2.1M', trend: 'down' as const },
 ];
 
 export const mockAlerts: Alert[] = [
@@ -264,18 +264,31 @@ export const mockApWidgetResponse: ApWidgetApiResponse = {
   },
 };
 
-export const mock13WeekCashData = [
-  { week: 'W1', actual: 24.3, projected: null },
-  { week: 'W2', actual: null, projected: 23.8 },
-  { week: 'W3', actual: null, projected: 24.1 },
-  { week: 'W4', actual: null, projected: 25.2 },
-  { week: 'W5', actual: null, projected: 26.1 },
-  { week: 'W6', actual: null, projected: 25.8 },
-  { week: 'W7', actual: null, projected: 26.4 },
-  { week: 'W8', actual: null, projected: 27.2 },
-  { week: 'W9', actual: null, projected: 27.8 },
-  { week: 'W10', actual: null, projected: 28.1 },
-  { week: 'W11', actual: null, projected: 28.5 },
-  { week: 'W12', actual: null, projected: 29.2 },
-  { week: 'W13', actual: null, projected: 30.1 },
-];
+export const mockCashOutlookResponse: CashOutlookResponse = {
+  as_of: '2025-11-11',
+  title: '13-Week Outlook',
+  currency: 'EUR',
+  entity_id: 6,
+  source: 'mock_cash_outlook',
+  weeks: [
+    { kind: 'projected', label: 'W1', value: 2300, week_end: '2025-11-16' },
+    { kind: 'projected', label: 'W2', value: 2300, week_end: '2025-11-23' },
+    { kind: 'projected', label: 'W3', value: 9350, week_end: '2025-11-30' },
+    { kind: 'projected', label: 'W4', value: 9350, week_end: '2025-12-07' },
+    { kind: 'projected', label: 'W5', value: 9350, week_end: '2025-12-14' },
+    { kind: 'projected', label: 'W6', value: 9350, week_end: '2025-12-21' },
+    { kind: 'projected', label: 'W7', value: 16475, week_end: '2025-12-28' },
+    { kind: 'projected', label: 'W8', value: 16475, week_end: '2026-01-04' },
+    { kind: 'projected', label: 'W9', value: 16475, week_end: '2026-01-11' },
+    { kind: 'projected', label: 'W10', value: 16475, week_end: '2026-01-18' },
+    { kind: 'projected', label: 'W11', value: 40175, week_end: '2026-01-25' },
+    { kind: 'projected', label: 'W12', value: 40175, week_end: '2026-02-01' },
+    { kind: 'projected', label: 'W13', value: 40175, week_end: '2026-02-08' },
+  ],
+  summary: [
+    {
+      min_balance_13w: 2300,
+      will_breach_zero: false,
+    },
+  ],
+};
