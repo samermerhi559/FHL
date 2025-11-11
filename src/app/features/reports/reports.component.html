@@ -1,0 +1,28 @@
+<section class="space-y-4">
+  <header class="rounded-2xl border border-border bg-card p-6 shadow-card">
+    <h1 class="text-2xl font-semibold">Reports Library</h1>
+    <p class="text-sm text-muted-foreground">
+      Export curated narratives for leadership. Files automatically include the filters set in
+      the main view.
+    </p>
+  </header>
+
+  <div class="grid gap-3">
+    @for (report of reports; track report.name) {
+      <article class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-card p-4 shadow-card">
+        <div>
+          <h2 class="text-lg font-semibold">{{ report.name }}</h2>
+          <p class="text-sm text-muted-foreground">
+            Updated {{ report.updated }} • Owner: {{ report.owner }}
+          </p>
+        </div>
+        <button
+          type="button"
+          class="rounded-full border border-border px-4 py-2 text-sm font-medium transition hover:bg-muted"
+        >
+          Generate PDF
+        </button>
+      </article>
+    }
+  </div>
+</section>

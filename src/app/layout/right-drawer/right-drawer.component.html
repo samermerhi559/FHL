@@ -1,0 +1,85 @@
+@if (open) {
+  <section class="right-drawer">
+    <div class="flex items-center justify-between border-b px-4 py-3">
+      <div class="flex items-center gap-2 text-sm font-medium">
+        <lucide-icon name="Sparkles" class="h-4 w-4 text-primary" />
+        <span>AI Insights</span>
+      </div>
+      <button
+        type="button"
+        class="rounded-full p-1 text-muted-foreground transition hover:bg-muted"
+        (click)="close()"
+      >
+        <lucide-icon name="X" class="h-4 w-4" />
+      </button>
+    </div>
+
+    <div class="drawer-scroll">
+      <div class="space-y-6 p-4 text-sm leading-relaxed">
+        <div>
+          <div class="mb-2 flex items-center gap-2 text-muted-foreground">
+            <lucide-icon name="Sparkles" class="h-3.5 w-3.5" />
+            <span>Explain This</span>
+          </div>
+          <p>{{ narrative }}</p>
+          @if (context) {
+            <p class="mt-2 text-xs text-muted-foreground">
+              Context: {{ context }}
+            </p>
+          }
+        </div>
+
+        <hr />
+
+        <div>
+          <div class="mb-2 flex items-center gap-2 text-muted-foreground">
+            <lucide-icon name="GitBranch" class="h-3.5 w-3.5" />
+            <span>Data Sources</span>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            @for (source of sources; track source) {
+              <span class="rounded-full border px-3 py-1 text-xs">
+                {{ source }}
+              </span>
+            }
+          </div>
+        </div>
+
+        <hr />
+
+        <div>
+          <h4 class="mb-2 text-muted-foreground">Why Different from ERP?</h4>
+          <p class="text-muted-foreground">
+            This dashboard applies normalization rules, consolidation logic, and
+            FX adjustments that may differ from raw ERP outputs. Lineage updated
+            on {{ (today | date: 'mediumDate') || 'Today' }}.
+          </p>
+        </div>
+
+        <hr />
+
+        <div>
+          <button
+            type="button"
+            class="flex w-full items-center justify-center gap-2 rounded border border-border px-4 py-2 text-sm font-medium transition hover:bg-muted"
+          >
+            <lucide-icon name="Share2" class="h-4 w-4" />
+            Share This View
+          </button>
+          <p class="mt-2 text-muted-foreground">
+            Generate a deep link with current filters locked.
+          </p>
+        </div>
+
+        <div class="rounded-lg bg-muted p-3 text-muted-foreground">
+          <p>
+            Last refresh: <span class="text-foreground">2 minutes ago</span>
+          </p>
+          <p class="mt-1">
+            Next scheduled: <span class="text-foreground">in 28 minutes</span>
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+}

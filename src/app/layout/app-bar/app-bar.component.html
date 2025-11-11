@@ -1,0 +1,133 @@
+<header class="border-b bg-white">
+  <div class="flex items-center justify-between border-b px-6 py-3">
+    <div class="flex items-center gap-6">
+      <button
+        class="flex items-center gap-2 rounded px-2 py-1 text-primary transition hover:bg-primary/10"
+        type="button"
+        (click)="navigate('/overview')"
+      >
+        <div class="flex h-8 w-8 items-center justify-center rounded bg-primary">
+          <lucide-icon name="Home" class="h-5 w-5 text-white" />
+        </div>
+        <span class="font-semibold">ERP</span>
+      </button>
+
+      <nav class="flex items-center gap-1 text-sm font-medium">
+        @for (item of topNav; track item.id) {
+          <button
+            type="button"
+            (click)="navigate(item.path)"
+            class="rounded px-4 py-2 transition-colors"
+            [ngClass]="
+              isActive(item.path)
+                ? 'text-primary'
+                : 'text-muted-foreground hover:text-foreground'
+            "
+          >
+            <span>{{ item.label }}</span>
+            @if (item.id === 'alerts' && state.unreadAlerts() > 0) {
+              <span
+                class="ml-2 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-xs text-white"
+              >
+                {{ state.unreadAlerts() }}
+              </span>
+            }
+          </button>
+        }
+      </nav>
+    </div>
+
+    <div class="flex items-center gap-2">
+      <button
+        type="button"
+        class="flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground transition hover:bg-muted"
+        (click)="openSearch()"
+        title="Search (Press /)"
+      >
+        <lucide-icon name="Search" class="h-4 w-4" />
+      </button>
+      <button
+        type="button"
+        class="relative flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground transition hover:bg-muted"
+        (click)="navigate('/alerts')"
+        title="Alerts"
+      >
+        <lucide-icon name="Bell" class="h-4 w-4" />
+        @if (state.unreadAlerts() > 0) {
+          <span
+            class="absolute -right-1 -top-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] text-white"
+          >
+            {{ state.unreadAlerts() }}
+          </span>
+        }
+      </button>
+      <button
+        type="button"
+        class="flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium transition"
+        [ngClass]="
+          state.aiEnabled()
+            ? 'bg-primary text-white'
+            : 'text-muted-foreground hover:bg-muted'
+        "
+        (click)="toggleAi()"
+      >
+        <lucide-icon name="Sparkles" class="h-4 w-4" />
+        AI Explain
+      </button>
+    </div>
+  </div>
+
+  <div class="flex flex-wrap items-center gap-3 px-6 py-2 text-sm">
+    <div class="flex items-center gap-2">
+      <span class="text-muted-foreground">Tenant:</span>
+      <select
+        class="w-48 rounded border border-border bg-input-background px-3 py-1.5 text-sm"
+        [disabled]="state.tenantLoading() || !state.tenantDirectory().length"
+        [ngModel]="state.filters().tenant?.id"
+        (ngModelChange)="onTenantChange($event)"
+      >
+        @if (state.tenantLoading()) {
+          <option selected>Loading tenants...</option>
+        } @else {
+          <option [ngValue]="undefined">Select tenant</option>
+          @for (tenant of state.tenantDirectory(); track tenant.tenant_id) {
+            <option [ngValue]="tenant.tenant_id">
+              {{ tenant.tenant_name }}
+            </option>
+          }
+        }
+      </select>
+    </div>
+
+    <div class="flex items-center gap-2">
+      <span class="text-muted-foreground">Entity:</span>
+      <select
+        class="w-44 rounded border border-border bg-input-background px-3 py-1.5 text-sm"
+        [disabled]="!state.entityOptions().length"
+        [ngModel]="state.filters().entity?.id"
+        (ngModelChange)="onEntityChange($event)"
+      >
+        @if (!state.entityOptions().length) {
+          <option selected>No entities</option>
+        } @else {
+          @for (entity of state.entityOptions(); track entity.id) {
+            <option [ngValue]="entity.id">{{ entity.name }}</option>
+          }
+        }
+      </select>
+    </div>
+
+    <div class="flex items-center gap-2">
+      <span class="text-muted-foreground">Period:</span>
+      <select
+        class="w-40 rounded border border-border bg-input-background px-3 py-1.5 text-sm"
+        [ngModel]="state.filters().period.id"
+        (ngModelChange)="onPeriodChange($event)"
+      >
+        @for (period of periods; track period.id) {
+          <option [ngValue]="period.id">{{ period.label }}</option>
+        }
+      </select>
+    </div>
+  </div>
+</header>

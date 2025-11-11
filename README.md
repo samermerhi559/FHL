@@ -1,22 +1,42 @@
+# Executive Dashboard (Angular)
 
-  # Executive Dashboard Overview
+This codebase was fully migrated from the original React/Vite implementation to Angular 18 with standalone components, Tailwind CSS styling, and a headless service layer that mirrors the previous widget/data plumbing.
 
-  This is a code bundle for Executive Dashboard Overview. The original project is available at https://www.figma.com/design/aKZlNo60ZahLbdTplJnGl8/Executive-Dashboard-Overview.
+## Tech stack
 
-  ## Running the code
+- Angular 18 standalone application bootstrapped with Angular CLI
+- Tailwind CSS for styling + the existing design tokens/variables brought forward from the React app
+- Lucide icons via `lucide-angular`
+- Feature-first folder layout: `features/*` for routed pages, `layout/*` for shared chrome, `core/*` for services + models, and `data/*` for mock payloads
 
-  Run `npm i` to install the dependencies.
+## Getting started
 
-  ### Backend API
-  This app expects the external .NET Core backend to be running at `https://localhost:7189/api/fhl`. That backend is responsible for calling `fhl2.set_tenant(...)`, `fhl2.api_tenant_directory_json(...)`, and `fhl2.api_ar_widget_json(...)`.
+```bash
+npm install
+npm run start     # serves http://localhost:4200 with live reload
+npm run build     # production build -> dist/
+```
 
-  1. Copy `.env.example` to `.env`.
-  2. Ensure `VITE_API_BASE_URL` points to your .NET endpoint and `VITE_DEFAULT_TENANT` matches a valid tenant (e.g., `Omega`).
+The app automatically falls back to the mock data that shipped with the React version when `environment.apiBaseUrl` is not reachable. Update `src/environments/environment*.ts` with the correct API base URL and default tenant to connect to a live backend.
 
-  ### Frontend
-  With the .NET backend running, start the Vite dev server:
+## Project structure
 
-  ```
-  npm run dev
-  ```
-  
+```
+src/
+  app/
+    core/        # models, shared services, utilities
+    data/        # mock periods/alerts/widgets/tenant directory
+    features/    # overview, alerts, compare, reports, sections, ops
+    layout/      # app bar, sidebar, AI drawer
+    shared/      # icons, sparklines, UI helpers
+```
+
+The Overview route recreates the previous dashboard experience (tenant/entity filters, AR/AP widgets, sections grid, AI drawer trigger, search palette) using Angular signals and services. Other views (alerts, compare, reports, ops/admin, section details) map to the React page components with equivalent content and behaviour.
+
+## Styling
+
+Tailwind is configured via `tailwind.config.js` and `src/styles.scss` retains the CSS variables + theming rules from the React build, so existing utility classes continue to work. Use standard Tailwind utilities inside Angular templates; no additional component libraries are required.
+
+## Testing
+
+Karma/Jasmine scaffolding from the CLI remains available via `npm test`. The current migration focused on feature parity; add unit tests around services or components as needed before shipping to production.

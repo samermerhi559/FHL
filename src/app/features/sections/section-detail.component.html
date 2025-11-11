@@ -1,0 +1,78 @@
+@if (section(); as activeSection) {
+  <section class="space-y-6">
+    <button
+      type="button"
+      class="inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm font-medium transition hover:bg-muted"
+      (click)="goBack()"
+    >
+      <lucide-icon name="ArrowLeft" class="h-4 w-4" />
+      Back to Overview
+    </button>
+
+    <header class="rounded-2xl border border-border bg-card p-6 shadow-card">
+      <div class="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <p class="text-sm text-muted-foreground">Section</p>
+          <h1 class="text-2xl font-semibold">{{ activeSection.name }}</h1>
+        </div>
+        <span class="rounded-full bg-muted px-4 py-2 text-sm font-medium">
+          Status: {{ activeSection.status | titlecase }}
+        </span>
+      </div>
+      <p class="mt-4 text-sm text-muted-foreground">
+        Monitor the KPIs powering this section and compare performance against the policies and guardrails your team configured.
+      </p>
+    </header>
+
+    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      @for (kpi of activeSection.kpis; track kpi.label) {
+        <div class="rounded-2xl border border-border bg-card p-4 shadow-card">
+          <p class="text-xs text-muted-foreground">{{ kpi.label }}</p>
+          <p class="mt-2 text-2xl font-semibold">{{ kpi.value }}</p>
+          @if (kpi.change !== undefined) {
+            <p class="mt-1 text-xs text-muted-foreground">
+              Change: {{ kpi.change }}%
+            </p>
+          }
+        </div>
+      }
+    </div>
+
+    @if (activeSection.sparklineData?.length) {
+      <div class="rounded-2xl border border-border bg-card p-4 shadow-card">
+        <p class="text-sm text-muted-foreground">Trend</p>
+        <app-sparkline [data]="activeSection.sparklineData!" />
+      </div>
+    }
+
+    <div class="rounded-2xl border border-border bg-card p-4 shadow-card">
+      <div class="flex items-center justify-between">
+        <h2 class="text-lg font-semibold">Related alerts</h2>
+        <span class="text-sm text-muted-foreground">
+          {{ relatedAlerts().length }} items
+        </span>
+      </div>
+      <ul class="mt-4 space-y-3 text-sm">
+        @for (alert of relatedAlerts(); track alert.id) {
+          <li class="rounded-xl border border-border/70 p-4">
+            <p class="font-semibold">{{ alert.title }}</p>
+            <p class="text-xs text-muted-foreground">
+              {{ alert.description }}
+            </p>
+            <p class="mt-2 text-xs text-muted-foreground">
+              {{ alert.timestamp | date: 'medium' }}
+            </p>
+          </li>
+        } @empty {
+          <li class="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+            No alerts for this section today.
+          </li>
+        }
+      </ul>
+    </div>
+  </section>
+} @else {
+  <section class="rounded-2xl border border-border bg-card p-6 text-center text-sm text-muted-foreground">
+    Section not found.
+  </section>
+}

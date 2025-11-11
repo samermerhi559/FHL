@@ -1,0 +1,57 @@
+<aside
+  class="flex h-full flex-col border-r bg-sidebar transition-all duration-300"
+  [class.w-16]="collapsed()"
+  [class.w-56]="!collapsed()"
+>
+  <div class="flex items-center justify-end border-b p-3">
+    <button
+      type="button"
+      class="flex h-8 w-8 items-center justify-center rounded hover:bg-sidebar-accent/60"
+      (click)="toggle()"
+    >
+      <lucide-icon
+        name="ChevronLeft"
+        class="h-4 w-4 transition-transform"
+        [class.rotate-180]="collapsed()"
+      />
+    </button>
+  </div>
+
+  <nav class="flex-1 space-y-1 p-2 text-sm font-medium">
+    @for (item of items; track item.id) {
+      <button
+        type="button"
+        class="flex w-full items-center gap-3 rounded px-3 py-2 text-left transition"
+        [ngClass]="
+          isActive(item.path)
+            ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+            : 'text-sidebar-foreground hover:bg-sidebar-accent/50'
+        "
+        (click)="navigate(item.path)"
+      >
+        <lucide-icon [name]="item.icon" class="h-4 w-4 shrink-0" />
+        @if (!collapsed()) {
+          <span class="truncate">{{ item.label }}</span>
+        }
+      </button>
+    }
+
+    <div class="my-2 h-px bg-sidebar-border"></div>
+
+    <button
+      type="button"
+      class="flex w-full items-center gap-3 rounded px-3 py-2 text-left transition"
+      [ngClass]="
+        isActive(adminItem.path)
+          ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+          : 'text-sidebar-foreground hover:bg-sidebar-accent/50'
+      "
+      (click)="navigate(adminItem.path)"
+    >
+      <lucide-icon [name]="adminItem.icon" class="h-4 w-4 shrink-0" />
+      @if (!collapsed()) {
+        <span class="truncate">{{ adminItem.label }}</span>
+      }
+    </button>
+  </nav>
+</aside>

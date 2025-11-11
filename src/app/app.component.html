@@ -1,0 +1,100 @@
+<div class="flex h-full flex-col overflow-hidden bg-background">
+  <app-app-bar />
+  <div class="flex flex-1 overflow-hidden">
+    <app-sidebar />
+    <main class="flex-1 overflow-y-auto bg-muted/50 p-6">
+      <div class="mx-auto max-w-[1600px]">
+        <router-outlet />
+      </div>
+    </main>
+    <app-right-drawer
+      [open]="state.aiEnabled()"
+      [section]="activeSection()"
+      [context]="drawerContext()"
+      (closed)="state.setAiInsights(false)"
+    />
+  </div>
+
+  @if (state.searchOpen()) {
+    <div class="search-overlay">
+      <div class="search-dialog">
+        <header class="flex items-center justify-between border-b border-border px-4 py-3">
+          <h2 class="text-sm font-semibold text-muted-foreground">
+            Search / Jump To
+          </h2>
+          <button
+            type="button"
+            class="rounded-full px-3 py-1 text-xs text-muted-foreground transition hover:bg-muted"
+            (click)="state.setSearchOpen(false)"
+          >
+            Esc
+          </button>
+        </header>
+        <div class="space-y-4 p-4">
+          <div class="relative">
+            <input
+              type="text"
+              class="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              placeholder="Search for sections, accounts, or KPIs..."
+              [value]="state.searchQuery()"
+              (input)="state.setSearchQuery($any($event.target).value)"
+              autofocus
+            />
+          </div>
+
+          <div class="space-y-2">
+            <p class="text-xs font-medium uppercase text-muted-foreground">
+              Sections
+            </p>
+            @if (state.searchQuery()) {
+              <div class="space-y-2">
+                @for (section of state.searchResults(); track section.id) {
+                  <button
+                    type="button"
+                    class="flex w-full items-center justify-between rounded-xl border border-border px-3 py-2 text-left text-sm transition hover:bg-muted"
+                    (click)="handleSearchNavigate(section.id)"
+                  >
+                    <div>
+                      <p class="font-semibold">{{ section.name }}</p>
+                      <p class="text-xs text-muted-foreground">
+                        {{
+                          section.kpis.length
+                            ? section.kpis[0].label
+                            : 'Primary KPI'
+                        }}
+                        •
+                        {{
+                          section.kpis.length ? section.kpis[0].value : '--'
+                        }}
+                      </p>
+                    </div>
+                    <span class="text-xs text-muted-foreground">Enter ↵</span>
+                  </button>
+                } @empty {
+                  <p class="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+                    No matches for "{{ state.searchQuery() }}"
+                  </p>
+                }
+              </div>
+            } @else {
+              <div class="space-y-2">
+                <p class="text-xs text-muted-foreground">Recent</p>
+                <div class="flex flex-wrap gap-2">
+                  <span class="rounded-full border border-border px-3 py-1 text-xs text-muted-foreground">
+                    Enterprise Corp
+                  </span>
+                  <span class="rounded-full border border-border px-3 py-1 text-xs text-muted-foreground">
+                    Overdue invoices
+                  </span>
+                  <span class="rounded-full border border-border px-3 py-1 text-xs text-muted-foreground">
+                    Cash projection
+                  </span>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+</div>
