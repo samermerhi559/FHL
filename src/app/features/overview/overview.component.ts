@@ -20,6 +20,7 @@ import {
   ArWidgetApiResponse,
   CashOutlookResponse,
   HeadlinesResponse,
+  Entity,
   GlobalFilters,
   HealthStatus,
   SectionConfig,
@@ -141,7 +142,7 @@ export class OverviewComponent {
   protected readonly cashCurrency = computed(
     () =>
       this.cashState().data?.currency ??
-      this.state.filters().entity?.baseCurrency ??
+      this.state.primaryEntity()?.baseCurrency ??
       'USD'
   );
 
@@ -190,7 +191,8 @@ export class OverviewComponent {
   }
 
   private loadWidgets(filters: GlobalFilters): void {
-    const payload = buildWidgetPayload(filters);
+    const primaryEntity = this.state.primaryEntity();
+    const payload = buildWidgetPayload(filters, primaryEntity);
     if (!payload) {
       this.arState.set({ loading: false, error: null, data: null });
       this.apState.set({ loading: false, error: null, data: null });
@@ -204,7 +206,7 @@ export class OverviewComponent {
 
     this.arState.update((current) => ({ ...current, loading: true, error: null }));
     this.apState.update((current) => ({ ...current, loading: true, error: null }));
-    this.loadCashOutlook(filters);
+    this.loadCashOutlook(filters, primaryEntity);
 
     this.arService
       .fetchWidget(payload)
@@ -233,11 +235,11 @@ export class OverviewComponent {
       });
   }
 
-  private loadCashOutlook(filters: GlobalFilters): void {
-    const tenant =
-      filters.tenant?.id?.toString() ?? filters.tenant?.name ?? null;
-    const entityId = getEntityId(filters);
-    if (!tenant || entityId === null) {
+  private loadCashOutlook(
+    filters: GlobalFilters,
+    primaryEntity?: Entity
+  ): void {
+    if (!filters.tenant?.id) {
       this.cashState.set({
         loading: false,
         error: null,
@@ -246,6 +248,9 @@ export class OverviewComponent {
       return;
     }
 
+    const entityIds = buildEntityIdsCsv(filters);
+    const reportCcy = primaryEntity?.baseCurrency ?? null;
+
     this.cashState.update((current) => ({
       ...current,
       loading: true,
@@ -253,7 +258,7 @@ export class OverviewComponent {
     }));
 
     this.cashService
-      .fetchCashOutlook(tenant, entityId)
+      .fetchCashOutlook(entityIds, reportCcy)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (data) => this.cashState.set({ loading: false, error: null, data }),
@@ -267,10 +272,7 @@ export class OverviewComponent {
   }
 
   private loadHeadlines(filters: GlobalFilters): void {
-    const tenant =
-      filters.tenant?.id?.toString() ?? filters.tenant?.name ?? null;
-    const entityId = getEntityId(filters);
-    if (!tenant || entityId === null) {
+    if (!filters.tenant?.id) {
       this.headlinesState.set({
         loading: false,
         error: null,
@@ -279,6 +281,8 @@ export class OverviewComponent {
       return;
     }
 
+    const entityIds = buildEntityIdsCsv(filters);
+
     this.headlinesState.update((current) => ({
       ...current,
       loading: true,
@@ -286,7 +290,7 @@ export class OverviewComponent {
     }));
 
     this.headlinesService
-      .fetchHeadlines(tenant, entityId)
+      .fetchHeadlines(entityIds)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (data) =>
@@ -307,32 +311,34 @@ const statusMap: Record<string, HealthStatus> = {
   critical: 'critical',
 };
 
-const buildWidgetPayload = (filters: GlobalFilters) => {
-  if (!filters.tenant) {
+const buildWidgetPayload = (
+  filters: GlobalFilters,
+  primaryEntity?: Entity
+) => {
+  if (!filters.tenant?.id) {
     return null;
   }
 
   const periodWindow = resolveWidgetWindow(filters.period);
+  const entityIds = buildEntityIdsCsv(filters);
   return {
-    tenant: filters.tenant.name,
-    entityId: getEntityId(filters),
+    entityIds,
     mode: periodWindow.mode,
     compare: periodWindow.compare,
     from: periodWindow.from ?? null,
     to: periodWindow.to ?? null,
-    reportCcy: filters.entity?.baseCurrency ?? null,
+    reportCcy: primaryEntity?.baseCurrency ?? null,
   };
 };
 
-const getEntityId = (filters: GlobalFilters): number | null => {
-  if (!filters.entity) {
-    return null;
+const buildEntityIdsCsv = (filters: GlobalFilters): string => {
+  if (!filters.entityIds?.length) {
+    return '';
   }
-  if (filters.entity.directoryEntityId) {
-    return filters.entity.directoryEntityId;
+  if (filters.entityIds.includes('')) {
+    return '';
   }
-  const parsed = Number(filters.entity.id);
-  return Number.isFinite(parsed) ? parsed : null;
+  return filters.entityIds.join(',');
 };
 
 const buildArSection = (

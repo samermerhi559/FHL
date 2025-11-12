@@ -100,21 +100,49 @@
     </div>
 
     <div class="flex items-center gap-2">
-      <span class="text-muted-foreground">Entity:</span>
-      <select
-        class="w-44 rounded border border-border bg-input-background px-3 py-1.5 text-sm"
-        [disabled]="!state.entityOptions().length"
-        [ngModel]="state.filters().entity?.id"
-        (ngModelChange)="onEntityChange($event)"
-      >
-        @if (!state.entityOptions().length) {
-          <option selected>No entities</option>
-        } @else {
-          @for (entity of state.entityOptions(); track entity.id) {
-            <option [ngValue]="entity.id">{{ entity.name }}</option>
-          }
+      <span class="text-muted-foreground">Entities:</span>
+      <div class="relative">
+        <button
+          id="entity-dropdown-trigger"
+          type="button"
+          class="flex w-60 items-center justify-between gap-2 rounded border border-border bg-input-background px-3 py-1.5 text-left text-sm"
+          [disabled]="!state.entityOptions().length"
+          (click)="toggleEntityDropdown()"
+        >
+          <span class="truncate">{{ entitySummary }}</span>
+          <lucide-icon name="ChevronDown" class="h-4 w-4 text-muted-foreground" />
+        </button>
+
+        @if (entityDropdownOpen && state.entityOptions().length) {
+          <div
+            id="entity-dropdown-panel"
+            class="absolute z-20 mt-2 w-64 rounded border border-border bg-white p-3 text-sm shadow-lg"
+          >
+            <label class="flex cursor-pointer items-center gap-2 rounded px-1 py-1 font-medium">
+              <input
+                type="checkbox"
+                class="h-4 w-4 rounded border-border text-primary focus:ring-primary"
+                [checked]="state.filters().entityIds.includes('')"
+                (change)="onAllEntitiesToggle($any($event.target).checked)"
+              />
+              <span>All Entities</span>
+            </label>
+            <div class="mt-2 max-h-60 space-y-1 overflow-y-auto pr-1">
+              @for (entity of state.entityOptions(); track entity.id) {
+                <label class="flex cursor-pointer items-center gap-2 rounded px-1 py-1">
+                  <input
+                    type="checkbox"
+                    class="h-4 w-4 rounded border-border text-primary focus:ring-primary"
+                    [checked]="isEntitySelected(entity.id)"
+                    (change)="onEntityToggle(entity.id, $any($event.target).checked)"
+                  />
+                  <span class="truncate">{{ entity.name }}</span>
+                </label>
+              }
+            </div>
+          </div>
         }
-      </select>
+      </div>
     </div>
 
     <div class="flex items-center gap-2">

@@ -24,9 +24,9 @@ import { LucideIconsModule } from '../../../../shared/lucide-icons.module';
           </dd>
         </div>
         <div class="flex justify-between">
-          <dt class="text-muted-foreground">Entity</dt>
+          <dt class="text-muted-foreground">Entities</dt>
           <dd class="font-medium">
-            {{ filters?.entity?.name ?? 'All' }}
+            {{ entitySummary }}
           </dd>
         </div>
         <div class="flex justify-between">
@@ -40,4 +40,5 @@ import { LucideIconsModule } from '../../../../shared/lucide-icons.module';
 })
 export class OverviewContextCardComponent {
   @Input() filters!: GlobalFilters | undefined;
+  @Input() entitySummary = 'All Entities';
 }

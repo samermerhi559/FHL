@@ -12,17 +12,12 @@ import { ApiHttpService } from './api-http.service';
 export class HeadlinesService {
   private readonly api = inject(ApiHttpService);
 
-  fetchHeadlines(
-    tenant: string,
-    entityId: number
-  ): Observable<HeadlinesResponse> {
+  fetchHeadlines(entityIds: string): Observable<HeadlinesResponse> {
     if (!this.api.isConfigured) {
       return of(mockHeadlinesResponse);
     }
 
-    const params = new HttpParams()
-      .set('tenant', tenant)
-      .set('entityId', entityId);
+    const params = new HttpParams().set('entityIds', entityIds ?? '');
 
     return this.api
       .get<HeadlinesResponse>('/signals/headlines', { params })

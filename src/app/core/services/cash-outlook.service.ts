@@ -13,32 +13,31 @@ export class CashOutlookService {
   private readonly api = inject(ApiHttpService);
 
   fetchCashOutlook(
-    tenant: string,
-    entityId: number
+    entityIds: string,
+    reportCcy?: string | null
   ): Observable<CashOutlookResponse> {
     if (!this.api.isConfigured) {
       return of(mockCashOutlookResponse);
     }
 
-    const params = new HttpParams()
-      .set('tenant', tenant)
-      .set('entityId', entityId);
+    let params = new HttpParams().set('entityIds', entityIds ?? '');
+    if (reportCcy) {
+      params = params.set('reportCcy', reportCcy);
+    }
 
-    return this.api
-      .get<CashOutlookResponse>('/cash-13w-weeks', { params })
-      .pipe(
-        catchError((error) => {
-          if (error instanceof ApiConnectionError) {
-            console.warn(
-              '[CashOutlookService] API unreachable, falling back to mock data.'
-            );
-            return of(mockCashOutlookResponse);
-          }
-          if (error instanceof ApiError) {
-            throw error;
-          }
-          throw new ApiError('Unable to load cash outlook data', error);
-        })
-      );
+    return this.api.get<CashOutlookResponse>('/cash-13w', { params }).pipe(
+      catchError((error) => {
+        if (error instanceof ApiConnectionError) {
+          console.warn(
+            '[CashOutlookService] API unreachable, falling back to mock data.'
+          );
+          return of(mockCashOutlookResponse);
+        }
+        if (error instanceof ApiError) {
+          throw error;
+        }
+        throw new ApiError('Unable to load cash outlook data', error);
+      })
+    );
   }
 }

@@ -1,6 +1,9 @@
 <section class="space-y-6">
   <div class="grid gap-4 lg:grid-cols-3">
-    <app-overview-context-card [filters]="state.filters()" />
+    <app-overview-context-card
+      [filters]="state.filters()"
+      [entitySummary]="state.entitySummary()"
+    />
     <app-overview-headlines-card
       [headlines]="headlinesState().data"
       [loading]="headlinesState().loading"

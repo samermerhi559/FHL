@@ -63,14 +63,47 @@ export class AppBarComponent {
     const tenantId = Number(value);
     if (!Number.isNaN(tenantId)) {
       this.state.setTenant(tenantId);
+      this.entityDropdownOpen = false;
     }
-  }
-
-  protected onEntityChange(value: string): void {
-    this.state.setEntity(value);
   }
 
   protected onPeriodChange(value: string): void {
     this.state.setPeriod(value);
+  }
+
+  protected get entitySummary(): string {
+    return this.state.entitySummary();
+  }
+
+  protected entityDropdownOpen = false;
+
+  protected toggleEntityDropdown(): void {
+    if (!this.state.entityOptions().length) {
+      return;
+    }
+    this.entityDropdownOpen = !this.entityDropdownOpen;
+  }
+
+  protected isEntitySelected(entityId: string): boolean {
+    return (this.state.filters().entityIds ?? []).includes(entityId);
+  }
+
+  protected onAllEntitiesToggle(checked: boolean): void {
+    if (checked) {
+      this.state.setEntitySelections(['']);
+    } else {
+      this.state.setEntitySelections([]);
+    }
+  }
+
+  protected onEntityToggle(entityId: string, checked: boolean): void {
+    const current = new Set(this.state.filters().entityIds ?? []);
+    if (checked) {
+      current.add(entityId);
+    } else {
+      current.delete(entityId);
+    }
+    current.delete('');
+    this.state.setEntitySelections([...current]);
   }
 }

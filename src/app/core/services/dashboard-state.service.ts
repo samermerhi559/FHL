@@ -15,6 +15,7 @@ import {
 export class DashboardStateService {
   readonly filters = signal<GlobalFilters>({
     period: mockPeriods[0],
+    entityIds: [],
   });
 
   readonly tenantDirectory = signal<TenantDirectoryEntry[]>([]);
@@ -48,6 +49,47 @@ export class DashboardStateService {
       countryCode: entry.country_code,
       baseCurrency: entry.base_currency,
     }));
+  });
+
+  readonly selectedEntityIds = computed(() => this.filters().entityIds ?? []);
+
+  readonly selectedEntities = computed<Entity[]>(() => {
+    const ids = this.selectedEntityIds().filter((id) => Boolean(id));
+    if (!ids.length) {
+      return [];
+    }
+    const lookup = new Map(
+      this.entityOptions().map((entity) => [entity.id, entity] as const)
+    );
+    return ids
+      .map((id) => lookup.get(id))
+      .filter((entity): entity is Entity => Boolean(entity));
+  });
+
+  readonly primaryEntity = computed<Entity | undefined>(
+    () => this.selectedEntities().at(0) ?? undefined
+  );
+
+  readonly entitySummary = computed(() => {
+    const options = this.entityOptions();
+    if (!options.length) {
+      return 'No entities';
+    }
+    const selection = this.filters().entityIds ?? [];
+    if (!selection.length) {
+      return 'Select entities';
+    }
+    if (selection.includes('')) {
+      return 'All Entities';
+    }
+    const selectedEntities = this.selectedEntities();
+    if (!selectedEntities.length) {
+      return 'Select entities';
+    }
+    if (selectedEntities.length <= 2) {
+      return selectedEntities.map((entity) => entity.name).join(', ');
+    }
+    return `${selectedEntities.length} entities`;
   });
 
   readonly searchResults = computed(() => {
@@ -117,6 +159,7 @@ export class DashboardStateService {
       countryCode: entry.country_code,
       baseCurrency: entry.base_currency,
     }));
+    const defaultEntityId = entityOptions[0]?.id;
 
     this.filters.update((current) => ({
       ...current,
@@ -124,16 +167,16 @@ export class DashboardStateService {
         id: tenant.tenant_id,
         name: tenant.tenant_name,
       },
-      entity: entityOptions[0] ?? current.entity,
+      entityIds: defaultEntityId ? [defaultEntityId] : [],
     }));
   }
 
-  setEntity(entityId: string): void {
-    const entity = this.entityOptions().find((item) => item.id === entityId);
-    if (!entity) {
-      return;
-    }
-    this.filters.update((current) => ({ ...current, entity }));
+  setEntitySelections(entityIds: string[]): void {
+    const normalized = this.normalizeEntitySelection(entityIds);
+    this.filters.update((current) => ({
+      ...current,
+      entityIds: normalized,
+    }));
   }
 
   markAlertAsRead(alertId: string): void {
@@ -166,15 +209,7 @@ export class DashboardStateService {
           if (firstEntity) {
             this.filters.update((current) => ({
               ...current,
-              entity: {
-                id: firstEntity.entity_id.toString(),
-                name: firstEntity.name,
-                type: 'subsidiary',
-                directoryEntityId: firstEntity.entity_id,
-                tenantId: firstTenant.tenant_id,
-                countryCode: firstEntity.country_code,
-                baseCurrency: firstEntity.base_currency,
-              },
+              entityIds: [firstEntity.entity_id.toString()],
             }));
           }
         }
@@ -187,5 +222,16 @@ export class DashboardStateService {
         this.tenantLoading.set(false);
       },
     });
+  }
+
+  private normalizeEntitySelection(entityIds: string[]): string[] {
+    if (!entityIds.length) {
+      return [];
+    }
+    const unique = Array.from(new Set(entityIds.filter((id) => id || id === '')));
+    if (unique.includes('')) {
+      return [''];
+    }
+    return unique;
   }
 }

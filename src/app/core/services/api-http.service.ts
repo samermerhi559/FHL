@@ -1,4 +1,9 @@
-import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
+import {
+  HttpClient,
+  HttpErrorResponse,
+  HttpHeaders,
+  HttpParams,
+} from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
@@ -7,6 +12,7 @@ import { ApiConnectionError, ApiError } from './api-errors';
 
 interface RequestOptions {
   params?: HttpParams;
+  headers?: HttpHeaders;
 }
 
 @Injectable({
@@ -39,6 +45,7 @@ export class ApiHttpService {
     return this.http
       .request<T>(method, url, {
         params: options.params,
+        headers: options.headers,
       })
       .pipe(
         catchError((error) => throwError(() => this.normalizeError(error)))

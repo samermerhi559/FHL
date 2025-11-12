@@ -21,13 +21,10 @@ export class ApWidgetService {
     }
 
     let params = new HttpParams()
-      .set('tenant', payload.tenant)
+      .set('entityIds', payload.entityIds ?? '')
       .set('mode', payload.mode)
       .set('compare', payload.compare);
 
-    if (payload.entityId !== null && payload.entityId !== undefined) {
-      params = params.set('entityId', String(payload.entityId));
-    }
     if (payload.from) {
       params = params.set('from', payload.from);
     }
@@ -38,19 +35,21 @@ export class ApWidgetService {
       params = params.set('reportCcy', payload.reportCcy);
     }
 
-    return this.api.get<ApWidgetApiResponse>('/ap-widget', { params }).pipe(
-      catchError((error) => {
-        if (error instanceof ApiConnectionError) {
-          console.warn(
-            '[ApWidgetService] API unreachable, falling back to mock data.'
-          );
-          return of(mockApWidgetResponse);
-        }
-        if (error instanceof ApiError) {
-          throw error;
-        }
-        throw new ApiError('Unable to load Accounts Payable widget', error);
-      })
-    );
+    return this.api
+      .get<ApWidgetApiResponse>('/ap-widget', { params })
+      .pipe(
+        catchError((error) => {
+          if (error instanceof ApiConnectionError) {
+            console.warn(
+              '[ApWidgetService] API unreachable, falling back to mock data.'
+            );
+            return of(mockApWidgetResponse);
+          }
+          if (error instanceof ApiError) {
+            throw error;
+          }
+          throw new ApiError('Unable to load Accounts Payable widget', error);
+        })
+      );
   }
 }

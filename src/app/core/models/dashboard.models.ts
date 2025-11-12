@@ -38,7 +38,7 @@ export interface TenantSummary {
 
 export interface GlobalFilters {
   tenant?: TenantSummary;
-  entity?: Entity;
+  entityIds: string[];
   period: Period;
 }
 
@@ -75,8 +75,7 @@ export type WidgetMode = 'month' | 'year' | 'custom';
 export type WidgetCompareMode = 'prev_period' | 'yoy';
 
 export interface WidgetRequestPayload {
-  tenant: string;
-  entityId?: number | null;
+  entityIds: string;
   mode: WidgetMode;
   from?: string | null;
   to?: string | null;

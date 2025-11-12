@@ -20,9 +20,10 @@ export class AppComponent {
   protected readonly activeSection = signal('overview');
   protected readonly drawerContext = computed(() => {
     const filters = this.state.filters();
-    return [filters.tenant?.name, filters.entity?.name ?? 'All Entities', filters.period.label]
+    const entityLabel = this.state.entitySummary();
+    return [filters.tenant?.name, entityLabel, filters.period.label]
       .filter(Boolean)
-      .join(' • ');
+      .join(' | ');
   });
 
   constructor() {
@@ -64,3 +65,4 @@ export class AppComponent {
     return 'overview';
   }
 }
+
