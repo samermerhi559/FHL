@@ -15,7 +15,7 @@ import {
     `
       :host {
         display: block;
-        height: 100%;
+        height: 50%;
       }
     `,
   ],
@@ -44,10 +44,11 @@ import {
       @if (loading) {
         <p class="mt-4 text-sm text-muted-foreground">Loading...</p>
       } @else {
-        <div class="mt-4 flex-1 rounded-lg border border-dashed border-border/70 bg-gradient-to-b from-background via-background to-muted/50">
+        <div class="mt-4 rounded-lg border border-dashed border-border/70 bg-gradient-to-b from-background via-background to-muted/50">
           <div
             echarts
-            class="h-full w-full"
+            class="w-full"
+            [style.height.px]="chartHeight"
             [options]="chartOptions"
           ></div>
         </div>
@@ -93,13 +94,26 @@ export class OverviewProjectionGraphComponent {
   @Input() currency = 'USD';
   @Input() loading = false;
   @Input() error: string | null = null;
+  @Input() chartHeight = 220;
 
   get chartOptions(): EChartsOption {
     const labels = this.weeks?.map((week) => week.label) ?? [];
-    const actualSeries = this.weeks
-      ?.map((week) => (week.kind === 'actual' ? week.value : null)) ?? [];
-    const projectedSeries = this.weeks
-      ?.map((week) => (week.kind === 'projected' ? week.value : null)) ?? [];
+    const actualSeries =
+      this.weeks?.map((week) =>
+        week.actual !== null && week.actual !== undefined
+          ? week.actual
+          : week.kind === 'actual'
+            ? week.value
+            : null
+      ) ?? [];
+    const projectedSeries =
+      this.weeks?.map((week) =>
+        week.projected !== null && week.projected !== undefined
+          ? week.projected
+          : week.kind === 'projected'
+            ? week.value
+            : null
+      ) ?? [];
 
     return {
       grid: {

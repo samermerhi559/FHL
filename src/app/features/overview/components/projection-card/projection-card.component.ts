@@ -13,7 +13,6 @@ import {
     `
       :host {
         display: block;
-        height: 100%;
       }
     `,
   ],
@@ -40,7 +39,7 @@ import {
       } @else {
         <div
           class="mt-4 flex-1 space-y-2 overflow-y-auto text-sm"
-          [ngClass]="expanded ? 'max-h-none' : 'max-h-[26rem]'"
+          [ngClass]="expanded ? 'max-h-none' : 'max-h-[13rem]'"
         >
           @for (week of weeks; track week.label) {
             <div
@@ -56,7 +55,7 @@ import {
                 <p
                   class="font-semibold"
                   [ngClass]="{
-                    'text-red-600': week.value <= 0
+                    'text-red-600': (week.value ?? 0) <= 0
                   }"
                 >
                   {{ formatValue(week.value) }}

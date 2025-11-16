@@ -55,6 +55,14 @@ interface CashOutlookApiWeek {
   week_index?: number;
   min_balance?: number;
   ending_balance?: number;
+  ending_balance_actual?: number | null;
+  ending_balance_projected?: number | null;
+}
+
+interface CashOutlookApiSummary {
+  cash_asof?: number | null;
+  min_balance_13w?: number | null;
+  will_breach_zero?: boolean;
 }
 
 interface CashOutlookApiResponse {
@@ -69,7 +77,7 @@ interface CashOutlookApiResponse {
     entity_ids?: number[];
     report_ccy?: string;
   };
-  summary?: CashOutlookSummary | null;
+  summary?: CashOutlookApiSummary | null;
   title?: string;
   source?: string;
   currency?: string;
@@ -79,7 +87,7 @@ const normalizeCashOutlookResponse = (
   payload: CashOutlookApiResponse
 ): CashOutlookResponse => {
   const asOf = payload.filters?.as_of ?? payload.window?.to ?? '';
-  const summary = payload.summary ? [payload.summary] : [];
+  const summary = payload.summary ? [mapSummary(payload.summary)] : [];
   const currency =
     payload.filters?.report_ccy ??
     payload.currency ??
@@ -103,19 +111,31 @@ const mapWeek = (
   index: number,
   asOf: string
 ): CashOutlookWeek => {
-  const value = week.ending_balance ?? week.min_balance ?? 0;
+  const actual =
+    week.ending_balance_actual ?? week.ending_balance ?? week.min_balance ?? null;
+  const projected = week.ending_balance_projected ?? null;
+  const labelIndex = week.week_index ?? index;
+  const value = actual ?? projected ?? 0;
   return {
-    kind: resolveWeekKind(week, asOf),
-    label: `W${(week.week_index ?? index) + 1}`,
+    kind: resolveWeekKind(week, asOf, actual),
+    label: `W${labelIndex + 1}`,
     value,
     week_end: week.week_end ?? '',
+    week_start: week.week_start ?? '',
+    week_index: labelIndex,
+    actual,
+    projected,
   };
 };
 
 const resolveWeekKind = (
   week: CashOutlookApiWeek,
-  asOf: string
+  asOf: string,
+  actualValue: number | null
 ): CashOutlookWeek['kind'] => {
+  if (actualValue !== null && actualValue !== undefined) {
+    return 'actual';
+  }
   if (!week.week_end || !asOf) {
     return 'projected';
   }
@@ -126,3 +146,11 @@ const resolveWeekKind = (
   }
   return weekEnd <= asOfDate ? 'actual' : 'projected';
 };
+
+const mapSummary = (
+  summary: CashOutlookApiSummary
+): CashOutlookSummary => ({
+  cash_asof: summary.cash_asof ?? null,
+  min_balance_13w: summary.min_balance_13w ?? null,
+  will_breach_zero: !!summary.will_breach_zero,
+});

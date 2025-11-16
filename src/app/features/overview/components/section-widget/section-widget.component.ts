@@ -1,12 +1,11 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { SectionConfig } from '../../../../core/models/dashboard.models';
-import { SparklineComponent } from '../../../../shared/components/sparkline/sparkline.component';
 
 @Component({
   selector: 'app-overview-section-widget',
   standalone: true,
-  imports: [CommonModule, SparklineComponent],
+  imports: [CommonModule],
   template: `
     @if (section) {
       <article
@@ -20,28 +19,26 @@ import { SparklineComponent } from '../../../../shared/components/sparkline/spar
               {{ section.kpis.length ? section.kpis[0].value : '--' }}
             </h3>
           </div>
-          <span
-            class="rounded-full border px-3 py-1 text-xs font-medium"
-            [ngClass]="statusClasses[section.status]"
-          >
-            {{ section.status | titlecase }}
-          </span>
+          @if (!section.hideStatus) {
+            <span
+              class="rounded-full border px-3 py-1 text-xs font-medium"
+              [ngClass]="statusClasses[section.status]"
+            >
+              {{ section.status | titlecase }}
+            </span>
+          }
         </div>
 
         <div class="mt-4 grid gap-3 text-sm text-muted-foreground">
           @for (kpi of section.kpis; track kpi.label) {
-            <div class="flex items-center justify-between">
-              <span>{{ kpi.label }}</span>
-              <span class="font-semibold text-foreground">{{ kpi.value }}</span>
-            </div>
+            @if (kpi.label && kpi.label.trim()) {
+              <div class="flex items-center justify-between">
+                <span>{{ kpi.label }} </span>
+                <span class="font-semibold text-foreground">{{ kpi.value }}</span>
+              </div>
+            }
           }
         </div>
-
-        @if (section.sparklineData?.length) {
-          <div class="mt-4">
-            <app-sparkline [data]="section.sparklineData!" />
-          </div>
-        }
       </article>
     } @else {
       <article

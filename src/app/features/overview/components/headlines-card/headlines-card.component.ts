@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, Input } from '@angular/core';
 import { LucideIconsModule } from '../../../../shared/lucide-icons.module';
-import { HeadlineSignal, HeadlinesResponse } from '../../../../core/models/dashboard.models';
+import { HeadlineEntry, HeadlinesResponse } from '../../../../core/models/dashboard.models';
 
 @Component({
   selector: 'app-overview-headlines-card',
@@ -12,12 +12,10 @@ import { HeadlineSignal, HeadlinesResponse } from '../../../../core/models/dashb
       <div class="flex items-center justify-between">
         <div>
           <p class="text-sm text-muted-foreground">Signals</p>
-          <h2 class="text-lg font-semibold">
-            {{ headlines?.title ?? 'Headlines' }}
-          </h2>
-          @if (headlines?.asof_month) {
+          <h2 class="text-lg font-semibold">Headlines</h2>
+          @if (headlines?.filters?.asof_month) {
             <p class="text-xs text-muted-foreground">
-              As of {{ headlines?.asof_month | date: 'MMMM yyyy' }}
+              As of {{ headlines?.filters?.asof_month | date: 'MMMM yyyy' }}
             </p>
           }
         </div>
@@ -27,22 +25,31 @@ import { HeadlineSignal, HeadlinesResponse } from '../../../../core/models/dashb
         <p class="mt-4 text-sm text-muted-foreground">Loading...</p>
       } @else {
         <ul class="mt-4 space-y-3 text-sm">
-          @for (headline of visibleHeadlines(); track headline.label) {
-            <li
-              class="flex items-center justify-between rounded-lg border border-dashed border-border px-3 py-2"
-            >
-              <div>
-                <p class="text-muted-foreground">{{ headline.label }}</p>
-                <p class="font-semibold">
-                  {{ headline.metric }} • {{ headline.value }}
-                </p>
+          @for (headline of headlineItems(); track headline.code) {
+            <li class="rounded-lg border border-dashed border-border px-3 py-2">
+              <div class="flex items-start gap-3">
+                <span
+                  class="mt-0.5 inline-flex rounded-full px-2 text-xs font-medium capitalize"
+                  [class.bg-emerald-50]="headline.level === 'success'"
+                  [class.text-emerald-700]="headline.level === 'success'"
+                  [class.bg-amber-50]="headline.level === 'warning'"
+                  [class.text-amber-700]="headline.level === 'warning'"
+                  [class.bg-blue-50]="headline.level === 'info'"
+                  [class.text-blue-700]="headline.level === 'info'"
+                  [class.bg-red-50]="headline.level === 'critical'"
+                  [class.text-red-700]="headline.level === 'critical'"
+                >
+                  {{ headline.level || 'info' }}
+                </span>
+                <div>
+                  <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    {{ headline.code }}
+                  </p>
+                  <p class="font-semibold">
+                    {{ headline.message }}
+                  </p>
+                </div>
               </div>
-              <lucide-icon
-                [name]="headline.direction === 'down' ? 'ArrowDown' : 'ArrowUp'"
-                class="h-4 w-4"
-                [class.text-emerald-500]="headline.direction === 'up'"
-                [class.text-red-500]="headline.direction === 'down'"
-              />
             </li>
           } @empty {
             <li
@@ -66,51 +73,7 @@ export class OverviewHeadlinesCardComponent {
   @Input() loading = false;
   @Input() error: string | null = null;
 
-  visibleHeadlines() {
-    if (!this.headlines) {
-      return [];
-    }
-    const entries: Array<{
-      label: string;
-      metric: string;
-      value: string;
-      direction: 'up' | 'down';
-    }> = [];
-    const mom = this.normalizeSignal(this.headlines.biggest_mom);
-    if (mom) {
-      entries.push({
-        label: 'Biggest MoM Change',
-        metric: mom.metric,
-        value: this.formatPercent(mom.pct),
-        direction: mom.direction,
-      });
-    }
-    const yoy = this.normalizeSignal(this.headlines.biggest_yoy);
-    if (yoy) {
-      entries.push({
-        label: 'Biggest YoY Change',
-        metric: yoy.metric,
-        value: this.formatPercent(yoy.pct),
-        direction: yoy.direction,
-      });
-    }
-    return entries;
-  }
-
-  private normalizeSignal(
-    signal?: HeadlineSignal | null
-  ): { metric: string; pct: number; direction: 'up' | 'down' } | null {
-    if (!signal || signal.pct === null || !signal.direction) {
-      return null;
-    }
-    return {
-      metric: signal.metric ?? signal.code ?? 'Metric',
-      pct: signal.pct,
-      direction: signal.direction,
-    };
-  }
-
-  private formatPercent(value: number): string {
-    return `${(value * 100).toFixed(1)}%`;
+  headlineItems(): HeadlineEntry[] {
+    return this.headlines?.headlines ?? [];
   }
 }
